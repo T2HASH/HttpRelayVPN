@@ -1,0 +1,190 @@
+#HttpRelayVPN
+
+یک ابزار رایگان برای عبور از فیلترینگ و DPI که ترافیک شما را پشت دامنه‌های قابل اعتماد مثل Google پنهان می‌کند. برای حالت ساده، به VPS یا سرور نیاز ندارید و فقط یک اکانت Google کافی است.
+
+توضیح ساده: مرورگر شما به این ابزار روی کامپیوتر خودتان وصل می‌شود. این ابزار ترافیک را شبیه ترافیک عادی Google نشان می‌دهد. فیلتر فقط google.com را می‌بیند و اجازه عبور می‌دهد. در پشت صحنه، یک Google Apps Script رایگان سایت واقعی را برای شما دریافت می‌کند.
+
+نحوه کار
+مرورگر -> پراکسی محلی -> Google/CDN -> رله شما -> سایت مقصد
+           |
+           +-> فیلتر فقط google.com را می‌بیند
+مرورگر، درخواست‌ها را به پراکسی محلی می‌فرستد. پراکسی این درخواست‌ها را از مسیر Google عبور می‌دهد تا برای فیلتر شبیه ترافیک عادی به نظر برسد. سپس رله‌ای که شما deploy کرده‌اید، سایت اصلی را دریافت می‌کند و پاسخ را برمی‌گرداند.
+
+راه‌اندازی مرحله‌به‌مرحله
+مرحله 1: دریافت پروژه
+git clone -b python_testing https://github.com/T2HASH/MasterHttpRelayVPN.git
+cd MasterHttpRelayVPN
+pip install -r requirements.txt
+دسترسی به PyPI ندارید؟ از این mirror استفاده کنید:
+
+pip install -r requirements.txt -i https://mirror-pypi.runflare.com/simple/ --trusted-host mirror-pypi.runflare.com
+اگر نخواستید با Git کار کنید، می‌توانید فایل ZIP پروژه را از GitHub دانلود و extract کنید.
+
+مرحله 2: راه‌اندازی رله Google با Code.gs
+این بخش همان رله‌ای است که روی سرورهای Google اجرا می‌شود و سایت‌ها را برای شما دریافت می‌کند.
+
+وارد Google Apps Script شوید.
+روی New project کلیک کنید.
+کد پیش‌فرض را کامل حذف کنید.
+فایل Code.gs همین پروژه را باز کنید، همه محتوای آن را کپی کنید و داخل Apps Script قرار دهید.
+این خط را به یک رمز دلخواه و امن تغییر دهید:
+const AUTH_KEY = "your-secret-password-here";
+روی Deploy -> New deployment کلیک کنید.
+نوع deployment را Web app بگذارید.
+این تنظیمات را انتخاب کنید:
+Execute as: Me
+Who has access: Anyone
+روی Deploy بزنید.
+مقدار Deployment ID را کپی کنید. در مرحله بعد به آن نیاز دارید.
+نکته: مقداری که برای AUTH_KEY می‌گذارید باید دقیقا با auth_key در فایل config.json یکی باشد.
+
+مرحله 3: تنظیم config.json
+ابتدا فایل نمونه را کپی کنید:
+
+cp config.example.json config.json
+در ویندوز می‌توانید فایل را دستی کپی و rename کنید.
+
+سپس config.json را باز کنید و مقادیر را وارد کنید:
+
+{
+  "mode": "apps_script",
+  "google_ip": "216.239.38.120",
+  "front_domain": "www.google.com",
+  "script_id": "PASTE_YOUR_DEPLOYMENT_ID_HERE",
+  "auth_key": "your-secret-password-here",
+  "listen_host": "127.0.0.1",
+  "listen_port": 8085,
+  "log_level": "INFO",
+  "verify_ssl": true
+}
+script_id : همان Deployment ID مرحله 2
+auth_key : همان رمزی که در Code.gs گذاشته‌اید
+مرحله 4: اجرا
+python main.py
+اگر همه‌چیز درست باشد، پراکسی روی 127.0.0.1:8085 بالا می‌آید.
+
+مرحله 5: تنظیم مرورگر
+مرورگر را روی این پراکسی تنظیم کنید:
+
+Proxy Address: 127.0.0.1
+Proxy Port: 8085
+Type: HTTP
+نمونه تنظیم مرورگرها:
+
+Firefox: Settings -> General -> Network Settings -> Manual proxy
+Chrome / Edge: از تنظیمات پراکسی سیستم استفاده می‌کنند
+یا از افزونه‌هایی مثل FoxyProxy استفاده کنید
+مرحله 6: نصب گواهی CA برای HTTPS
+در حالت apps_script، برنامه برای مدیریت HTTPS یک گواهی محلی می‌سازد. اگر آن را نصب نکنید، مرورگر برای سایت‌ها خطای امنیتی می‌دهد.
+
+فایل گواهی بعد از اولین اجرا در این مسیر ساخته می‌شود:
+
+ca/ca.crt
+
+ویندوز
+روی ca/ca.crt دوبار کلیک کنید.
+گزینه Install Certificate را بزنید.
+گزینه Current User را انتخاب کنید.
+گزینه Place all certificates in the following store را بزنید.
+از بخش Browse، گزینه Trusted Root Certification Authorities را انتخاب کنید.
+مراحل را تا پایان ادامه دهید.
+مرورگر را یک بار ببندید و دوباره باز کنید.
+Firefox
+Firefox معمولا certificate store جداگانه دارد:
+
+به Settings -> Privacy & Security -> Certificates بروید.
+روی View Certificates کلیک کنید.
+در تب Authorities، روی Import بزنید.
+فایل ca/ca.crt را انتخاب کنید.
+گزینه Trust this CA to identify websites را فعال کنید.
+نصب خودکار هنگام اجرا: در حالت apps_script، برنامه به صورت خودکار وضعیت اعتماد گواهی CA را بررسی کرده و در صورت نیاز نصب می‌کند. در صورت موفقیت پیام تأیید در لاگ نمایش داده می‌شود. اگر نصب خودکار ناموفق بود، می‌توانید دستور python main.py --install-cert را اجرا کنید.
+
+نکته امنیتی: پوشه ca/ را با کسی به اشتراک نگذارید. اگر خواستید از اول گواهی جدید بسازید، این پوشه را حذف کنید تا دوباره ساخته شود.
+
+حالت‌های موجود
+حالت	نیازمندی	توضیح
+apps_script	اکانت رایگان Google	ساده‌ترین حالت، بدون نیاز به سرور
+google_fronting	Google Cloud Run	استفاده از سرویس Cloud Run خودتان
+domain_fronting	Cloudflare Worker	استفاده از Worker روی Cloudflare
+custom_domain	دامنه شخصی روی Cloudflare	اتصال مستقیم به دامنه خودتان
+برای اکثر کاربران، apps_script بهترین انتخاب است.
+
+تنظیمات مهم
+تنظیم	توضیح
+mode	نوع رله
+auth_key	رمز مشترک بین برنامه و رله
+script_id	Deployment ID مربوط به Apps Script
+listen_host	آدرس محلی برای اجرا
+listen_port	پورت پراکسی
+log_level	میزان جزئیات لاگ
+تنظیمات پیشرفته
+تنظیم	مقدار پیش‌فرض	توضیح
+google_ip	216.239.38.120	IP مورد استفاده برای مسیر Google
+front_domain	www.google.com	دامنه‌ای که فیلتر می‌بیند
+verify_ssl	true	بررسی اعتبار TLS
+worker_host	-	برای حالت‌های Cloudflare/Cloud Run
+custom_domain	-	دامنه شخصی شما
+script_ids	-	چند Deployment ID برای load balancing
+استفاده از چند Script ID
+اگر چند نسخه از Code.gs را deploy کنید، می‌توانید همه Deployment ID ها را در آرایه script_ids بگذارید:
+
+{
+  "script_ids": [
+    "DEPLOYMENT_ID_1",
+    "DEPLOYMENT_ID_2",
+    "DEPLOYMENT_ID_3"
+  ]
+}
+به‌روزرسانی Code.gs
+اگر فایل Code.gs را تغییر دادید، باید دوباره Deploy -> New deployment بزنید و script_id جدید را داخل config.json قرار دهید. صرفا ذخیره کردن کد، نسخه فعال را عوض نمی‌کند.
+
+دستورهای اجرا
+python main.py
+python main.py -p 9090
+python main.py --log-level DEBUG
+python main.py -c /path/to/config.json
+python main.py --install-cert        # نصب گواهی CA و خروج
+python main.py --no-cert-check       # رد شدن از بررسی خودکار گواهی
+نصب خودکار: هنگام اجرا در حالت apps_script، برنامه به‌طور خودکار بررسی می‌کند که آیا گواهی CA قابل اعتماد است یا نه و در صورت نیاز آن را نصب می‌کند. اگر نصب خودکار ناموفق بود (مثلاً نیاز به دسترسی مدیر دارد)، می‌توانید دستور python main.py --install-cert را اجرا کنید یا مراحل مرحله ۶ را دنبال کنید.
+
+معماری
+┌─────────┐     ┌──────────────┐     ┌─────────────┐     ┌──────────┐
+│ Browser │────►│ Local Proxy  │────►│ CDN / Google │────►│  Relay   │──► Internet
+│         │◄────│ (this tool)  │◄────│  (fronted)   │◄────│ Endpoint │◄──
+└─────────┘     └──────────────┘     └─────────────┘     └──────────┘
+فایل‌های پروژه
+فایل	کاربرد
+main.py	اجرای برنامه
+proxy_server.py	مدیریت اتصال مرورگر
+domain_fronter.py	انجام domain fronting
+h2_transport.py	ارتباط سریع‌تر با HTTP/2
+mitm.py	ساخت و مدیریت certificate
+cert_installer.py	نصب خودکار گواهی CA در ویندوز، مک، لینوکس و Firefox
+ws.py	پشتیبانی WebSocket
+Code.gs	رله Apps Script
+config.example.json	فایل نمونه تنظیمات
+رفع مشکل
+مشکل	راه‌حل
+Config not found	فایل config.example.json را به config.json کپی کنید
+خطای certificate در مرورگر	گواهی CA را نصب کنید (مرحله ۶)
+تلگرام کار می‌کند ولی مرورگر سایت‌ها را باز نمی‌کند	تقریباً مطمئناً گواهی CA نصب نشده. مرحله ۶ را دنبال کنید، سپس مرورگر را کاملاً ببندید و دوباره باز کنید (برای Chrome/Edge مطمئن شوید هیچ پروسه Chrome در پس‌زمینه باز نیست).
+گواهی نصب شد ولی مرورگر هنوز خطا می‌دهد	Chrome و Edge گواهی‌ها را cache می‌کنند — باید مرورگر را کاملاً ببندید (Task Manager یا system tray را چک کنید) و دوباره باز کنید. Firefox نیاز به import جداگانه دارد (بخش Firefox در مرحله ۶).
+خطای unauthorized	مقدار auth_key و AUTH_KEY باید یکسان باشند
+timeout	IP دیگری برای Google امتحان کنید
+سرعت کم	از چند script_id برای load balancing استفاده کنید
+خطای 502 Bad JSON	Google به‌جای JSON پاسخ HTML برگردانده (مثلاً صفحه quota یا 404). دلایل: script_id اشتباه، تجاوز از سهمیه روزانه Apps Script، یا عدم ایجاد deployment جدید پس از ویرایش Code.gs. script_id را بررسی کنید و یک deployment جدید بسازید.
+نکات امنیتی
+فایل config.json را با کسی به اشتراک نگذارید.
+مقدار پیش‌فرض AUTH_KEY را قبل از deploy عوض کنید.
+پوشه ca/ را منتشر نکنید.
+بهتر است listen_host روی 127.0.0.1 بماند.
+سلب مسئولیت
+MasterHttpRelayVPN فقط برای اهداف آموزشی، تست و پژوهش ارائه شده است.
+
+بدون ضمانت: این نرم‌افزار به صورت «همان‌گونه که هست» ارائه می‌شود و هیچ‌گونه ضمانت صریح یا ضمنی، از جمله قابلیت فروش، مناسب بودن برای هدف خاص، یا عدم نقض حقوق دیگران برای آن وجود ندارد.
+محدودیت مسئولیت: توسعه‌دهندگان و مشارکت‌کنندگان این پروژه هیچ مسئولیتی در قبال خسارت‌های مستقیم، غیرمستقیم، اتفاقی، تبعی، یا هر نوع خسارت دیگر ناشی از استفاده یا ناتوانی در استفاده از این پروژه ندارند.
+مسئولیت کاربر: استفاده از این پروژه خارج از محیط‌های کنترل‌شده و آزمایشی ممکن است بر شبکه، حساب‌ها، پراکسی‌ها، گواهی‌ها یا سیستم‌های متصل اثر بگذارد. تمام مسئولیت نصب، پیکربندی و استفاده بر عهده کاربر است.
+رعایت قوانین: پیش از استفاده از این نرم‌افزار، رعایت تمام قوانین و مقررات محلی، کشوری و بین‌المللی بر عهده کاربر است.
+رعایت قوانین Google: اگر از Google Apps Script یا دیگر سرویس‌های Google در این پروژه استفاده می‌کنید، مسئولیت رعایت شرایط استفاده، محدودیت‌ها، سهمیه‌ها و سیاست‌های پلتفرم Google با خود شما است. استفاده نادرست ممکن است باعث تعلیق یا غیرفعال شدن اکانت Google یا deployment های شما شود.
+شرایط مجوز: استفاده، کپی، توزیع و تغییر این نرم‌افزار فقط تحت شرایط مجوز موجود در مخزن مجاز است و هر استفاده خارج از آن شرایط ممنوع است.
+MIT
