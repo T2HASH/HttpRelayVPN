@@ -7,7 +7,7 @@
 [![Forks](https://img.shields.io/github/forks/T2HASH/HttpRelayVPN?style=for-the-badge&logo=github&color=00ff00)](https://github.com/T2HASH/HttpRelayVPN/network/members)
 [![Python](https://img.shields.io/badge/Python-3.8+-blue?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-MIT-red?style=for-the-badge)](https://opensource.org/licenses/MIT)
-[![Telegram](https://img.shields.io/badge/Support-Telegram-0088cc?style=for-the-badge&logo=telegram)](https://t.me/YOUR_ID)
+[![Telegram](https://img.shields.io/badge/Support-Telegram-0088cc?style=for-the-badge&logo=telegram)](https://t.me/t2hashchannel)
 
 </div>
 
