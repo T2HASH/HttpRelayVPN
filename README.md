@@ -28,7 +28,7 @@
 ### مرحله 1: دریافت پروژه
 
 ```bash
-git clone -b python_testing https://github.com/T2HASH/HttpRelayVPN.git
+git clone  python_testing https://github.com/T2HASH/HttpRelayVPN.git
 cd MasterHttpRelayVPN
 pip install -r requirements.txt
 ```
