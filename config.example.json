@@ -1,0 +1,14 @@
+{
+	"_comment": "Copy this file to config.json and fill in your values",
+	"mode": "apps_script",
+	"google_ip": "216.239.38.120",
+	"front_domain": "www.google.com",
+	"script_id": "YOUR_APPS_SCRIPT_DEPLOYMENT_ID",
+	"auth_key": "CHANGE_ME_TO_A_STRONG_SECRET",
+	"listen_host": "127.0.0.1",
+	"listen_port": 8085,
+	"log_level": "INFO",
+	"verify_ssl": true,
+	"_hosts_comment": "Optional SNI-rewrite overrides. YouTube, googlevideo, gstatic, fonts.googleapis.com, ytimg, ggpht, doubleclick, etc. are ALREADY handled automatically (routed via google_ip with SNI=front_domain, same trick as the Xray MITM-DomainFronting config). Add entries here only for custom domains, e.g. \"example.com\": \"216.239.38.120\".",
+	"hosts": {}
+}
