@@ -29,7 +29,7 @@
 
 ```bash
 git clone  python_testing https://github.com/T2HASH/HttpRelayVPN.git
-cd MasterHttpRelayVPN
+cd HttpRelayVPN
 pip install -r requirements.txt
 ```
 
